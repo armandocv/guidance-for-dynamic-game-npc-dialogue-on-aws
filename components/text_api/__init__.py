@@ -33,7 +33,8 @@ class TextApi(Construct):
                 statements=[
                     _iam.PolicyStatement(
                         actions=[
-                            "bedrock:InvokeModel"
+                            "bedrock:InvokeModel",
+                            "polly:SynthesizeSpeech"
                         ],
                         effect=_iam.Effect.ALLOW,
                         resources=["*"]

@@ -5,6 +5,7 @@ import os
 import json
 import boto3
 import requests
+import base64
 
 from typing import Dict, List, Any
 from botocore.exceptions import ClientError
@@ -23,7 +24,7 @@ OPENSEARCH_INDEX = os.getenv("OPENSEARCH_INDEX", None)
 tracer = Tracer()
 logger = Logger()
 bedrock_client = boto3.client("bedrock-runtime")
-
+polly_client = boto3.client("polly")
 
 @tracer.capture_lambda_handler
 def lambda_handler(event, context): 
@@ -33,16 +34,65 @@ def lambda_handler(event, context):
     if validate_response:
         return validate_response
     question = body["question"]
+    # if the voice_id or voice_engine isn't specified, use default values
+    voice_id = body.get("voice_id", "Ruth")
+    voice_engine = body.get("voice_engine", "neural")
     logger.info(f"Question: {question}")
-    response = get_prediction(
-        question=question
-    )
+    logger.info(f"Voice ID: {voice_id}")
+    logger.info(f"Voice Engine: {voice_engine}")
+
+    response = get_prediction(question=question)
+    speech_info = synthesize_speech(text = response, 
+        voice_id = voice_id,
+        voice_engine = voice_engine)
+
     return build_response(
         {
-            "response": response
+            "response": response,
+            "speech_info" : speech_info            
         }
     )
 
+def synthesize_speech(text: str, voice_id: str, voice_engine: str):
+    # given text to synthesize along with the voice ID and engine, this will 
+    # get a buffer with the pcm in 1 channel 16-bit at 16k and then will
+    # get a buffer with json that has all of the viseme timings
+    speech_info = {}
+    
+    try:
+        sound_response = polly_client.synthesize_speech(
+            OutputFormat = "pcm",
+            Text = text,
+            VoiceId = voice_id,
+            Engine = voice_engine
+        )
+        audio_stream = sound_response["AudioStream"]
+        speech_info['sound_status'] = "ok"
+        speech_info['sound_response'] = base64.b64encode(audio_stream.read()).decode("utf-8")
+    except Exception as e:
+        speech_info['sound_status'] = "error"
+        exception_str = f"Audio Exception: {type(e).__name__} Message: {str(e)}"
+        speech_info['sound_error'] = exception_str
+        logger.info(exception_str)
+    
+    try:
+        viseme_response = polly_client.synthesize_speech(
+            OutputFormat = "json",
+            SpeechMarkTypes = ["viseme"],
+            Text = text,
+            VoiceId = voice_id,
+            Engine = voice_engine
+        )
+        viseme_strem = viseme_response["AudioStream"]
+        speech_info['viseme_status'] = "ok"
+        speech_info['viseme_response'] = base64.b64encode(viseme_strem.read()).decode("utf-8")
+    except Exception as e:
+        speech_info['viseme_status'] = "error"
+        exception_str = f"Viseme Exception: {type(e).__name__} Message: {str(e)}"
+        speech_info['viseme_error'] = exception_str
+        logger.info(exception_str)
+    
+    return speech_info
 
 def build_response(body: Dict) -> Dict:
     return {
@@ -167,7 +217,7 @@ def get_prediction(question: str) -> str:
     
     logger.info(f"Sending prompt to Bedrock (Using OpenSearch context) ...")
     context = hits[0]['_source']['passage'] # Top hit from search
-    prompt_template = f"""\n\nHuman: Your name is Ada, and you are a helpful assistant, helping a Human answer questions in a friendly tone. Use the following as additional context to provide a concise answer to the question at the end.
+    prompt_template = f"""\n\nHuman: Your name is Ada, and you are a helpful assistant, helping a Human answer questions with the tone of a stereotypical pirate. Use the following as additional context to provide a concise answer to the question at the end, but don't say that you're using additional context.
 
     <reference>
     {context}
