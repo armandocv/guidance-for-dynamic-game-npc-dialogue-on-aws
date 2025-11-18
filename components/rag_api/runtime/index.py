@@ -217,26 +217,24 @@ def get_prediction(question: str) -> str:
     
     logger.info(f"Sending prompt to Bedrock (Using OpenSearch context) ...")
     context = hits[0]['_source']['passage'] # Top hit from search
-    prompt_template = f"""\n\nHuman: Your name is Ada, and you are a helpful assistant, helping a Human answer questions with the tone of a stereotypical pirate. Use the following as additional context to provide a concise answer to the question at the end, but don't say that you're using additional context.
-
-    <reference>
-    {context}
-    </reference>
-    
-    Question: {question}\n\nAssistant:"""
     response = bedrock_client.invoke_model(
         body=json.dumps(
             {
-                "prompt": prompt_template,
-                "max_tokens_to_sample": 200,
-                "anthropic_version": "bedrock-2023-05-31"
+                "anthropic_version": "bedrock-2023-05-31",
+                "max_tokens": 200,
+                "messages": [
+                    {
+                        "role": "user",
+                        "content": f"Your name is Ada, and you are a helpful assistant, helping answer questions with the tone of a stereotypical pirate. Use the following as additional context to provide a concise answer to the question, but don't say that you're using additional context.\n\n<reference>\n{context}\n</reference>\n\nQuestion: {question}"
+                    }
+                ]
             }
         ),
         modelId=TEXT_MODEL_ID,
-        accept="*/*",
+        accept="application/json",
         contentType="application/json"
     )
     response_body = json.loads(response.get("body").read())
-    answer = response_body.get("completion")
+    answer = response_body["content"][0]["text"]
     logger.info(f"Bedrock returned the following answer: {answer}")
     return answer

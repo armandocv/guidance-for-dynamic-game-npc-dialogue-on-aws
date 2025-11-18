@@ -109,32 +109,28 @@ def synthesize_speech(text: str, voice_id: str, voice_engine: str):
     return speech_info
     
 def get_prediction(question: str) -> str:
-    prompt_template = f"""\n\nHuman: Your name is Ada, and you are a helpful assitant. Provide a concise answer to the question at the end. If you don't know the answer, just say that you don't know, don't try to make up an answer.
-    
-    Question: {question}
-    
-    \n\nAssistant:"""
     logger.info(f"Sending prompt to Bedrock (RAG disabled) ... ")
     response = bedrock_client.invoke_model(
-        # Default model parameters for Claude v2
         body=json.dumps(
             {
-                "prompt": prompt_template,
-                "max_tokens_to_sample": 300,
+                "anthropic_version": "bedrock-2023-05-31",
+                "max_tokens": 300,
+                "messages": [
+                    {
+                        "role": "user",
+                        "content": f"Your name is Ada, and you are a helpful assistant. Provide a concise answer to the question. If you don't know the answer, just say that you don't know, don't try to make up an answer.\n\nQuestion: {question}"
+                    }
+                ],
                 "temperature": 0.5,
                 "top_k": 250,
-                "top_p": 1,
-                "stop_sequences": [
-                    "\n\nHuman:"
-                ],
-                "anthropic_version": "bedrock-2023-05-31"
+                "top_p": 1
             }
         ),
         modelId=TEXT_MODEL_ID,
-        accept="*/*",
+        accept="application/json",
         contentType="application/json"
     )
     response_body = json.loads(response.get("body").read())
-    answer = response_body.get("completion")
+    answer = response_body["content"][0]["text"]
     logger.info(f"Bedrock returned the following answer: {answer}")
     return answer

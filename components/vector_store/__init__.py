@@ -42,9 +42,9 @@ class VectorStore(Construct):
         self.search_domain = _opensearch.Domain(
             self,
             "OpenSearchDomain",
-            version=_opensearch.EngineVersion.OPENSEARCH_2_9,
+            version=_opensearch.EngineVersion.OPENSEARCH_2_19,
             ebs=_opensearch.EbsOptions(
-                volume_size=20,
+                volume_size=10,
                 volume_type=_ec2.EbsDeviceVolumeType.GP3
             ),
             enforce_https=True,
