@@ -221,38 +221,35 @@ The following steps will demonstrate how to hydrate the **Amazon OpenSearch Serv
 
 An Unreal Engine sample project, [AmazonPollyMetaHuman](https://artifacts.kits.eventoutfitters.aws.dev/industries/games/AmazonPollyMetaHuman.zip), has been provided for download. This sample [MetaHuman digital character](https://www.unrealengine.com/en-US/digital-humans) can be used to showcase dynamic NPC dialog. Use the following steps to integrate the sample MetaHuman with the deployed guidance infrastructure:
 
-1. Open the [IAM console](https://console.aws.amazon.com/iam/) in your AWS account, [create a new IAM user](https://docs.aws.amazon.com/IAM/latest/UserGuide/id_users_create.html).
-2. Assign the `AmazonPollyReadOnlyAccess` policy to the newly created user.
-3. Create a new [access key](https://docs.aws.amazon.com/IAM/latest/UserGuide/id_credentials_access-keys.html#Using_CreateAccessKey) for the user. 
-4. [Install and configure](https://docs.aws.amazon.com/cli/latest/userguide/getting-started-install.html) the AWS CLI on the computer that will run the Unreal Engine sample project to use the `Access Key ID`, and `Secret Access Key` values for the IA M user you created previously.
-5. Using the [CloudFormation console](https://console.aws.amazon.com/cloudformation/home), click the deployed `QA` stack. For example, if your `WORKLOAD_NAME` parameter is `Ada`, CloudFormation will reflect that `Ada-QA` as the deployed `QA` stack.
-6. Select the `Outputs` tab, and capture the values for `TextApiEndpointUrl`, and `RagApiEndpointUrl`.
-7. Download, the [AmazonPollyMetaHuman](https://artifacts.kits.eventoutfitters.aws.dev/industries/games/AmazonPollyMetaHuman.zip) zipped Unreal Engine project.
-8. Extract the `AmazonPollyMetaHuman` project folder to the `Unreal Projects` folder of the Unreal Engine development environment.
-9. Launch Unreal Engine 5.4, and open the `AmazonPollyMetaHuman` sample project.
-10. Using the Unreal Editor, select `File` --> `Generate Visual Studio Code Project` to use VS Code for editing source code.
-11. Using the Unreal Editor, select `File` --> `Open Visual Studio Code` to open the project for code editing.
-12. In VS Code, open the `/Source/AmazonPollyMetaHuman/Private/Private/SpeechComponent.cpp` file for editing.
-13. Navigate to the following code section, and replace the `ComboboxUri` variables with the `TextApiEndpointUrl`, and `RagApiEndpointUrl` CloudFormation outputs.
+1. Using the [CloudFormation console](https://console.aws.amazon.com/cloudformation/home), click the deployed `QA` stack. For example, if your `WORKLOAD_NAME` parameter is `Ada`, CloudFormation will reflect that `Ada-QA` as the deployed `QA` stack.
+2. Select the `Outputs` tab, and capture the values for `TextApiEndpointUrl`, and `RagApiEndpointUrl`.
+3. Download the [AmazonPollyMetaHuman](https://artifacts.kits.eventoutfitters.aws.dev/industries/games/AmazonPollyMetaHuman.zip) zipped Unreal Engine project.
+4. Extract the `AmazonPollyMetaHuman` project folder.
+5. Right-click on the `AmazonPollyMetaHuman.uproject` file and select `Generate Visual Studio project files`.
+6. Open the `AmazonPollyMetaHuman.sln` file in Microsoft Visual Studio 2022.
+7. In Visual Studio, navigate to `Source/AmazonPollyMetaHuman/Private/SpeechComponent.cpp` and open it for editing.
+8. Locate the `CallAPI` function and update the placeholder URLs with your API endpoints from CloudFormation:
     ```cpp
-        void USpeechComponent::CallAPI(const FString Text, const FString Uri)
+    void USpeechComponent::CallAPI(const FString Text, const FString Uri)
+    {
+        FString ComboBoxUri = "";
+        FHttpRequestRef Request = FHttpModule::Get().CreateRequest();
+        UE_LOG(LogPollyMsg, Display, TEXT("%s"), *Uri);
+        if(Uri == "Regular LLM")
         {
-            FString ComboBoxUri = "";
-            FHttpRequestRef Request = FHttpModule::Get().CreateRequest();
-            UE_LOG(LogPollyMsg, Display, TEXT("%s"), *Uri);
-            if(Uri == "Regular LLM")
-            {
-                UE_LOG(LogPollyMsg, Display, TEXT("If Regular LLM"));
-                ComboBoxUri = "<ADD `TextApiEndpointUrl` VALUE FROM GUIDANCE DEPLOYMENT>";
-            } else {
-                UE_LOG(LogPollyMsg, Display, TEXT("If Else"));
-                
-                ComboBoxUri = "<ADD `RagApiEndpointUrl` VALUE FROM GUIDANCE DEPLOYMENT>";
-            }
+            UE_LOG(LogPollyMsg, Display, TEXT("If Regular LLM"));
+            ComboBoxUri = "<ADD TextApiEndpointUrl VALUE FROM CLOUDFORMATION>";
+        } else {
+            UE_LOG(LogPollyMsg, Display, TEXT("If Else"));
+            
+            ComboBoxUri = "<ADD RagApiEndpointUrl VALUE FROM CLOUDFORMATION>";
+        }
     ```
-14. Save the `SpeechComponent.cpp` file, and close VS Code.
-15. Using the Unreal Editor, click the `Compile` button to recompile the C++ code.
-16. Once the updated code has been compiled, click the `Play` button to interact with the ___Ada___ NPC.
+9. Save the file.
+10. In Visual Studio, select `Build` --> `Build Solution` to compile the project.
+11. Once the build completes successfully, close Visual Studio.
+12. Open the `AmazonPollyMetaHuman.uproject` file to launch Unreal Engine.
+13. Click the `Play` button to interact with the Ada NPC.
 
 >__NOTE:__ Review the detailed [installation guide](assets/docs/metahuman_windows.md) for Windows 2022 for more information on installing, and configuring both Unreal Engine, and the sample project.
 
