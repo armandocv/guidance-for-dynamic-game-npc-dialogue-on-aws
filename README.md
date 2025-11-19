@@ -22,7 +22,7 @@
 
 ## Overview
 
-Typical player interactions with NPCs are static, and require large teams of script writers to create static dialog content for each character, in each game, and each game version to ensure consistency with game lore. This Guidance helps game developers automate the process of creating a non-player character (NPC) for their games and associated infrastructure. It uses Unreal Engine, along with foundation models (FMs), for instance, the large language models (LLMs) Claude 3.5, to improve NPC conversational skills. This leads to dynamic responses from the NPC that are unique to each player, adding to scripted dialogue. By using the Large Language Model Ops (LLMOps) methodology, this Guidance accelerates prototyping, and delivery time by continually integrating, and deploying the generative AI application, along with fine-tuning the LLMs. All while helping to ensure that the NPC has full access to a secure knowledge base of game lore, using retrieval-augmented generation (RAG).
+Typical player interactions with NPCs are static, and require large teams of script writers to create static dialog content for each character, in each game, and each game version to ensure consistency with game lore. This Guidance helps game developers automate the process of creating a non-player character (NPC) for their games and associated infrastructure. It uses Unreal Engine, along with foundation models (FMs), for instance, the large language models (LLMs) Claude 3.5, to improve NPC conversational skills. The solution integrates Amazon Polly to convert NPC responses into speech with viseme data for realistic lip-sync animation in MetaHuman characters. This leads to dynamic responses from the NPC that are unique to each player, adding to scripted dialogue. By using the Large Language Model Ops (LLMOps) methodology, this Guidance accelerates prototyping, and delivery time by continually integrating, and deploying the generative AI application, along with fine-tuning the LLMs. All while helping to ensure that the NPC has full access to a secure knowledge base of game lore, using retrieval-augmented generation (RAG).
 
 ___If you're looking for quick and easy step by step guide to get started, check out the Workshop -  [Operationalize Generative AI Applications using LLMOps](https://catalog.us-east-1.prod.workshops.aws/workshops/90992473-01e8-42d6-834f-9baf866a9057/en-US).___
 
@@ -32,7 +32,7 @@ ___If you're looking for quick and easy step by step guide to get started, check
 
 ### Cost
 
-_You are responsible for the cost of the AWS services used while running this Guidance. As of November 2025, the cost for running this Guidance with the default settings in the `us-west-2` (Oregon) AWS Region is approximately $275 per month for processing 100 requests._
+_You are responsible for the cost of the AWS services used while running this Guidance. As of November 2025, the cost for running this Guidance with the default settings in the `us-east-1` (N. Virginia) AWS Region is approximately $275 per month for processing 100 requests._
 
 For example, the following table shows a break-down of approximate costs _(per month)_ to process 100 requests, using an **Amazon OpenSearch Service** vector database for RAG:
 
@@ -201,13 +201,15 @@ Once the `QA` stage of the pipeline is complete, and the `SystemTest` stage acti
 
 ### Hydrating the vector store
 
+>__NOTE:__ This guidance uses 3 data nodes without dedicated master nodes, following AWS best practices for clusters with fewer than 10 nodes. Master election is handled automatically by the data nodes. For production deployments with 10+ nodes or heavy write workloads, consider adding dedicated master nodes.
+
 The following steps will demonstrate how to hydrate the **Amazon OpenSearch Service** vector database for RAG:
 
 1. Download a copy of [Treasure Island by Robert Louis Stevenson](https://www.gutenberg.org/ebooks/120.txt.utf-8) to test vector store hydration and RAG.
 2. Using the AWS Console, navigate to Amazon S3 service, and select the bucket with the following format, `<WORKLOAD NAME>-qa-<REGION>-<ACCOUNT NUMBER>`. For example,  `ada-qa-us-east-1-123456789`.
 3. Upload the Treasure Island File, by clicking on the upload button, and selecting the file `pg120.txt` file. This will trigger the **AWS Lambda** function that starts a an **Amazon SageMaker Processing Job** to hydrate the **Amazon OpenSearch Service** database.
 3. Open the [SageMaker](https://console.aws.amazon.com/sagemaker) console. Using the navigation panel on the left-hand side, expand the `Processing` option, and then select `Processing jobs`. You'll see a processing job has been started, for example `Ada-RAG-Ingest-01-21-20-13-20`. This jobs executes the process of chunking the ebook data, converting it to embeddings, and hydrating the database. 
-4. Clink on the running processing job to view its configuration. Under the `Monitoring`, click the `View logs` link to see see the processing logs for your job in **Amazon CloudWatch**. After roughly 5 minutes, the log stream becomes available, and after clicking on the log stream, you will see that each line of the log output represents the successful processing of a chunk of the text inserted into the vector store. For example:
+4. Click on the running processing job to view its configuration. Under the `Monitoring`, click the `View logs` link to see see the processing logs for your job in **Amazon CloudWatch**. After roughly 5 minutes, the log stream becomes available, and after clicking on the log stream, you will see that each line of the log output represents the successful processing of a chunk of the text inserted into the vector store. For example:
 
 <p align="center">
     <img src="assets/images/sagemaker_job_log.png" alt="SageMaker Log" style="width: 33em;" />
