@@ -42,9 +42,9 @@ class VectorStore(Construct):
         self.search_domain = _opensearch.Domain(
             self,
             "OpenSearchDomain",
-            version=_opensearch.EngineVersion.OPENSEARCH_2_9,
+            version=_opensearch.EngineVersion.OPENSEARCH_2_15,
             ebs=_opensearch.EbsOptions(
-                volume_size=20,
+                volume_size=10,
                 volume_type=_ec2.EbsDeviceVolumeType.GP3
             ),
             enforce_https=True,
@@ -65,8 +65,7 @@ class VectorStore(Construct):
             capacity=_opensearch.CapacityConfig(
                 data_node_instance_type="r6g.large.search",
                 data_nodes=3,
-                master_node_instance_type="r6g.large.search",
-                master_nodes=3
+                multi_az_with_standby_enabled=False
             ),
             zone_awareness=_opensearch.ZoneAwarenessConfig(
                 availability_zone_count=3

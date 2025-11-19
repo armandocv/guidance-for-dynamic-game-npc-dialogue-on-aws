@@ -22,7 +22,7 @@
 
 ## Overview
 
-Typical player interactions with NPCs are static, and require large teams of script writers to create static dialog content for each character, in each game, and each game version to ensure consistency with game lore. This Guidance helps game developers automate the process of creating a non-player character (NPC) for their games and associated infrastructure. It uses Unreal Engine, along with foundation models (FMs), for instance, the large language models (LLMs) Claude 2, and Llama 2, to improve NPC conversational skills. This leads to dynamic responses from the NPC that are unique to each player, adding to scripted dialogue. By using the Large Language Model Ops (LLMOps) methodology, this Guidance accelerates prototyping, and delivery time by continually integrating, and deploying the generative AI application, along with fine-tuning the LLMs. All while helping to ensure that the NPC has full access to a secure knowledge base of game lore, using retrieval-augmented generation (RAG).
+Typical player interactions with NPCs are static, and require large teams of script writers to create static dialog content for each character, in each game, and each game version to ensure consistency with game lore. This Guidance helps game developers automate the process of creating a non-player character (NPC) for their games and associated infrastructure. It uses Unreal Engine, along with foundation models (FMs), for instance, the large language models (LLMs) Claude 3.5, to improve NPC conversational skills. The solution integrates Amazon Polly to convert NPC responses into speech with viseme data for realistic lip-sync animation in MetaHuman characters. This leads to dynamic responses from the NPC that are unique to each player, adding to scripted dialogue. By using the Large Language Model Ops (LLMOps) methodology, this Guidance accelerates prototyping, and delivery time by continually integrating, and deploying the generative AI application, along with fine-tuning the LLMs. All while helping to ensure that the NPC has full access to a secure knowledge base of game lore, using retrieval-augmented generation (RAG).
 
 ___If you're looking for quick and easy step by step guide to get started, check out the Workshop -  [Operationalize Generative AI Applications using LLMOps](https://catalog.us-east-1.prod.workshops.aws/workshops/90992473-01e8-42d6-834f-9baf866a9057/en-US).___
 
@@ -32,19 +32,19 @@ ___If you're looking for quick and easy step by step guide to get started, check
 
 ### Cost
 
-_You are responsible for the cost of the AWS services used while running this Guidance. As of January 2024, the cost for running this Guidance with the default settings in the `us-east-1` (N. Virginia) AWS Region is approximately $590.59 per month for processing 100 records._
+_You are responsible for the cost of the AWS services used while running this Guidance. As of November 2025, the cost for running this Guidance with the default settings in the `us-east-1` (N. Virginia) AWS Region is approximately $275 per month for processing 100 requests._
 
 For example, the following table shows a break-down of approximate costs _(per month)_ to process 100 requests, using an **Amazon OpenSearch Service** vector database for RAG:
 
 |     **Service**    | **Cost (per month)** |
 |:------------------:|:--------------------:|
-| OpenSearch Service | $586.65              |
+| OpenSearch Service | $270.00              |
 | SageMaker          | $1.43                |
 | S3                 | $0.67                |
 | CodeBuild          | $0.34                |
 | Secrets Manager    | $0.20                |
-| Bedrock            | $1.30                |
-|      **Total**     | **$590.59**           |
+| Bedrock            | $0.26                |
+|      **Total**     | **$272.90**          |
 
 
 ## Prerequisites
@@ -67,11 +67,10 @@ Before deploying the guidance code, ensure that the following required tools hav
 
 >__NOTE:__ The Guidance has been tested using AWS CDK version 2.178.2. If you wish to update the CDK application to later version, make sure to update the `requirements.txt`, and `cdk.json` files, in the root of the repository, with the updated version of the AWS CDK.
 
-- Unreal Engine 4.26 or 4.27.
-- Microsoft Visual Studio 2022 for Unreal Engine 4 C++ development.
-- Microsoft Visual Studio Code for editing.
+- Unreal Engine 5.4 (compatible with 5.5 and 5.6).
+- Microsoft Visual Studio 2022 for Unreal Engine 5 C++ development.
 
->__NOTE:__ If you need help with these setup steps, refer to the Unreal Engine 4 documentation, especially "Setting Up Visual Studio for Unreal Engine". The  was only tested with Visual Studio 2022 with Unreal Engine 4.27. The Unreal Engine sample __DOES NOT__ work with Ureal Engine 5.
+>__NOTE:__ If you need help with these setup steps, refer to the Unreal Engine 5 documentation, especially "Setting Up Visual Studio for Unreal Engine". The sample was tested with Visual Studio 2022 with Unreal Engine 5.4 and 5.6.
 
 ### AWS account requirements
 
@@ -83,10 +82,10 @@ This deployment requires that you have an existing [Amazon SageMaker Domain](htt
 >__NOTE:__ See the [Quick onboard to Amazon SageMaker Domain](https://docs.aws.amazon.com/sagemaker/latest/dg/onboard-quick-start.html) section of the __Amazon SageMaker Developer Guide__ for more information on how to configure an __Amazon SageMaker Domain__ in your AWS account. 
 
 - Bedrock Model Access
-    - Anthropic Claude
+    - Anthropic Claude 3.5 Haiku
     - Amazon Titan Embeddings G1 - Text
 
->__NOTE:__ AWS accounts do not have access to models by default, see the [Model access](https://docs.aws.amazon.com/bedrock/latest/userguide/model-access.html) section of the __Amazon Bedrock User Guide__ to request access to the `Claude v2`, and `Titan Embeddings` foundation models.
+>__NOTE:__ Bedrock foundation models are now automatically enabled when first invoked. For Anthropic Claude models, some first-time users may need to submit use case details before accessing the model. See the [Model access](https://docs.aws.amazon.com/bedrock/latest/userguide/model-access.html) section of the __Amazon Bedrock User Guide__ for more information.
 
 ### aws cdk bootstrap
 
@@ -176,6 +175,8 @@ All features for this guidance are only available in the _US East (N. Virginia)_
 
 To verify a successful deployment of this guidance, open [CloudFormation](https://console.aws.amazon.com/cloudformation/home) console, and verify the status of the stack infrastructure stack is `CREATE_COMPLETE`. For example, if your `WORKLOAD_NAME` parameter is `Ada`, CloudFormation will reflect that the `Ada-Toolchain` stack has a `CREATE_COMPLETE` status.
 
+>__NOTE:__ If upgrading from a previous version of this guidance, the OpenSearch cluster configuration has changed (removed dedicated master nodes). You will need to delete the existing QA/PROD stacks before redeploying. See the [Cleanup](#cleanup) section for instructions.
+
 ## Running the Guidance
 
 ### Quality Assurance
@@ -201,13 +202,15 @@ Once the `QA` stage of the pipeline is complete, and the `SystemTest` stage acti
 
 ### Hydrating the vector store
 
+>__NOTE:__ This guidance uses 3 data nodes without dedicated master nodes, following AWS best practices for clusters with fewer than 10 nodes. Master election is handled automatically by the data nodes. For production deployments with 10+ nodes or heavy write workloads, consider adding dedicated master nodes.
+
 The following steps will demonstrate how to hydrate the **Amazon OpenSearch Service** vector database for RAG:
 
 1. Download a copy of [Treasure Island by Robert Louis Stevenson](https://www.gutenberg.org/ebooks/120.txt.utf-8) to test vector store hydration and RAG.
 2. Using the AWS Console, navigate to Amazon S3 service, and select the bucket with the following format, `<WORKLOAD NAME>-qa-<REGION>-<ACCOUNT NUMBER>`. For example,  `ada-qa-us-east-1-123456789`.
 3. Upload the Treasure Island File, by clicking on the upload button, and selecting the file `pg120.txt` file. This will trigger the **AWS Lambda** function that starts a an **Amazon SageMaker Processing Job** to hydrate the **Amazon OpenSearch Service** database.
 3. Open the [SageMaker](https://console.aws.amazon.com/sagemaker) console. Using the navigation panel on the left-hand side, expand the `Processing` option, and then select `Processing jobs`. You'll see a processing job has been started, for example `Ada-RAG-Ingest-01-21-20-13-20`. This jobs executes the process of chunking the ebook data, converting it to embeddings, and hydrating the database. 
-4. Clink on the running processing job to view its configuration. Under the `Monitoring`, click the `View logs` link to see see the processing logs for your job in **Amazon CloudWatch**. After roughly 5 minutes, the log stream becomes available, and after clicking on the log stream, you will see that each line of the log output represents the successful processing of a chunk of the text inserted into the vector store. For example:
+4. Click on the running processing job to view its configuration. Under the `Monitoring`, click the `View logs` link to see see the processing logs for your job in **Amazon CloudWatch**. After roughly 5 minutes, the log stream becomes available, and after clicking on the log stream, you will see that each line of the log output represents the successful processing of a chunk of the text inserted into the vector store. For example:
 
 <p align="center">
     <img src="assets/images/sagemaker_job_log.png" alt="SageMaker Log" style="width: 33em;" />
@@ -219,38 +222,35 @@ The following steps will demonstrate how to hydrate the **Amazon OpenSearch Serv
 
 An Unreal Engine sample project, [AmazonPollyMetaHuman](https://artifacts.kits.eventoutfitters.aws.dev/industries/games/AmazonPollyMetaHuman.zip), has been provided for download. This sample [MetaHuman digital character](https://www.unrealengine.com/en-US/digital-humans) can be used to showcase dynamic NPC dialog. Use the following steps to integrate the sample MetaHuman with the deployed guidance infrastructure:
 
-1. Open the [IAM console](https://console.aws.amazon.com/iam/) in your AWS account, [create a new IAM user](https://docs.aws.amazon.com/IAM/latest/UserGuide/id_users_create.html).
-2. Assign the `AmazonPollyReadOnlyAccess` policy to the newly created user.
-3. Create a new [access key](https://docs.aws.amazon.com/IAM/latest/UserGuide/id_credentials_access-keys.html#Using_CreateAccessKey) for the user. 
-4. [Install and configure](https://docs.aws.amazon.com/cli/latest/userguide/getting-started-install.html) the AWS CLI on the computer that will run the Unreal Engine sample project to use the `Access Key ID`, and `Secret Access Key` values for the IA M user you created previously.
-5. Using the [CloudFormation console](https://console.aws.amazon.com/cloudformation/home), click the deployed `QA` stack. For example, if your `WORKLOAD_NAME` parameter is `Ada`, CloudFormation will reflect that `Ada-QA` as the deployed `QA` stack.
-6. Select the `Outputs` tab, and capture the values for `TextApiEndpointUrl`, and `RagApiEndpointUrl`.
-7. Download, the [AmazonPollyMetaHuman](https://artifacts.kits.eventoutfitters.aws.dev/industries/games/AmazonPollyMetaHuman.zip) zipped Unreal Engine project.
-8. Extract the `AmazonPollyMetaHuman` project folder to the `Unreal Projects` folder of the Unreal Engine development environment.
-9. Launch Unreal Engine 4.27, and open the `AmazonPollyMetaHuman` sample project.
-10. Using the Unreal Editor, select `File` --> `Generate Visual Studio Code Project` to use VS Code for editing source code.
-11. Using the Unreal Editor, select `File` --> `Open Visual Studio Code` to open the project for code editing.
-12. In VS Code, open the `/Source/AmazonPollyMetaHuman/Private/Private/SpeechComponent.cpp` file for editing.
-13. Navigate to the following code section, and replace the `ComboboxUri` variables with the `TextApiEndpointUrl`, and `RagApiEndpointUrl` CloudFormation outputs.
+1. Using the [CloudFormation console](https://console.aws.amazon.com/cloudformation/home), click the deployed `QA` stack. For example, if your `WORKLOAD_NAME` parameter is `Ada`, CloudFormation will reflect that `Ada-QA` as the deployed `QA` stack.
+2. Select the `Outputs` tab, and capture the values for `TextApiEndpointUrl`, and `RagApiEndpointUrl`.
+3. Download the [AmazonPollyMetaHuman](https://artifacts.kits.eventoutfitters.aws.dev/industries/games/AmazonPollyMetaHuman.zip) zipped Unreal Engine project.
+4. Extract the `AmazonPollyMetaHuman` project folder.
+5. Right-click on the `AmazonPollyMetaHuman.uproject` file and select `Generate Visual Studio project files`.
+6. Open the `AmazonPollyMetaHuman.sln` file in Microsoft Visual Studio 2022.
+7. In Visual Studio, navigate to `Source/AmazonPollyMetaHuman/Private/SpeechComponent.cpp` and open it for editing.
+8. Locate the `CallAPI` function and update the placeholder URLs with your API endpoints from CloudFormation:
     ```cpp
-        void USpeechComponent::CallAPI(const FString Text, const FString Uri)
+    void USpeechComponent::CallAPI(const FString Text, const FString Uri)
+    {
+        FString ComboBoxUri = "";
+        FHttpRequestRef Request = FHttpModule::Get().CreateRequest();
+        UE_LOG(LogPollyMsg, Display, TEXT("%s"), *Uri);
+        if(Uri == "Regular LLM")
         {
-            FString ComboBoxUri = "";
-            FHttpRequestRef Request = FHttpModule::Get().CreateRequest();
-            UE_LOG(LogPollyMsg, Display, TEXT("%s"), *Uri);
-            if(Uri == "Regular LLM")
-            {
-                UE_LOG(LogPollyMsg, Display, TEXT("If Regular LLM"));
-                ComboBoxUri = "<ADD `TextApiEndpointUrl` VALUE FROM GUIDANCE DEPLOYMENT>";
-            } else {
-                UE_LOG(LogPollyMsg, Display, TEXT("If Else"));
-                
-                ComboBoxUri = "<ADD `RagApiEndpointUrl` VALUE FROM GUIDANCE DEPLOYMENT>";
-            }
+            UE_LOG(LogPollyMsg, Display, TEXT("If Regular LLM"));
+            ComboBoxUri = "<ADD TextApiEndpointUrl VALUE FROM CLOUDFORMATION>";
+        } else {
+            UE_LOG(LogPollyMsg, Display, TEXT("If Else"));
+            
+            ComboBoxUri = "<ADD RagApiEndpointUrl VALUE FROM CLOUDFORMATION>";
+        }
     ```
-14. Save the `SpeechComponent.cpp` file, and close VS Code.
-15. Using the Unreal Editor, click the `Compile` button to recompile the C++ code.
-16. Once the updated code has been compiled, click the `Play` button to interact with the ___Ada___ NPC.
+9. Save the file.
+10. In Visual Studio, select `Build` --> `Build Solution` to compile the project.
+11. Once the build completes successfully, close Visual Studio.
+12. Open the `AmazonPollyMetaHuman.uproject` file to launch Unreal Engine.
+13. Click the `Play` button to interact with the Ada NPC.
 
 >__NOTE:__ Review the detailed [installation guide](assets/docs/metahuman_windows.md) for Windows 2022 for more information on installing, and configuring both Unreal Engine, and the sample project.
 
