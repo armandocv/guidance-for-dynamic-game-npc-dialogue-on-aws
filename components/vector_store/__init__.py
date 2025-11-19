@@ -64,7 +64,8 @@ class VectorStore(Construct):
             removal_policy=cdk.RemovalPolicy.DESTROY,
             capacity=_opensearch.CapacityConfig(
                 data_node_instance_type="r6g.large.search",
-                data_nodes=3
+                data_nodes=3,
+                multi_az_with_standby_enabled=False
             ),
             zone_awareness=_opensearch.ZoneAwarenessConfig(
                 availability_zone_count=3

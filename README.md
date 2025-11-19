@@ -69,7 +69,6 @@ Before deploying the guidance code, ensure that the following required tools hav
 
 - Unreal Engine 5.4 (compatible with 5.5 and 5.6).
 - Microsoft Visual Studio 2022 for Unreal Engine 5 C++ development.
-- Microsoft Visual Studio Code for editing.
 
 >__NOTE:__ If you need help with these setup steps, refer to the Unreal Engine 5 documentation, especially "Setting Up Visual Studio for Unreal Engine". The sample was tested with Visual Studio 2022 with Unreal Engine 5.4 and 5.6.
 
@@ -175,6 +174,8 @@ All features for this guidance are only available in the _US East (N. Virginia)_
 ## Deployment Validation
 
 To verify a successful deployment of this guidance, open [CloudFormation](https://console.aws.amazon.com/cloudformation/home) console, and verify the status of the stack infrastructure stack is `CREATE_COMPLETE`. For example, if your `WORKLOAD_NAME` parameter is `Ada`, CloudFormation will reflect that the `Ada-Toolchain` stack has a `CREATE_COMPLETE` status.
+
+>__NOTE:__ If upgrading from a previous version of this guidance, the OpenSearch cluster configuration has changed (removed dedicated master nodes). You will need to delete the existing QA/PROD stacks before redeploying. See the [Cleanup](#cleanup) section for instructions.
 
 ## Running the Guidance
 
