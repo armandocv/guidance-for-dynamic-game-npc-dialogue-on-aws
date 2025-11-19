@@ -32,19 +32,19 @@ ___If you're looking for quick and easy step by step guide to get started, check
 
 ### Cost
 
-_You are responsible for the cost of the AWS services used while running this Guidance. As of January 2024, the cost for running this Guidance with the default settings in the `us-east-1` (N. Virginia) AWS Region is approximately $590.59 per month for processing 100 records._
+_You are responsible for the cost of the AWS services used while running this Guidance. As of November 2025, the cost for running this Guidance with the default settings in the `us-west-2` (Oregon) AWS Region is approximately $275 per month for processing 100 requests._
 
 For example, the following table shows a break-down of approximate costs _(per month)_ to process 100 requests, using an **Amazon OpenSearch Service** vector database for RAG:
 
 |     **Service**    | **Cost (per month)** |
 |:------------------:|:--------------------:|
-| OpenSearch Service | $586.65              |
+| OpenSearch Service | $270.00              |
 | SageMaker          | $1.43                |
 | S3                 | $0.67                |
 | CodeBuild          | $0.34                |
 | Secrets Manager    | $0.20                |
-| Bedrock            | $1.30                |
-|      **Total**     | **$590.59**           |
+| Bedrock            | $0.26                |
+|      **Total**     | **$272.90**          |
 
 
 ## Prerequisites
@@ -67,11 +67,11 @@ Before deploying the guidance code, ensure that the following required tools hav
 
 >__NOTE:__ The Guidance has been tested using AWS CDK version 2.178.2. If you wish to update the CDK application to later version, make sure to update the `requirements.txt`, and `cdk.json` files, in the root of the repository, with the updated version of the AWS CDK.
 
-- Unreal Engine 4.26 or 4.27.
-- Microsoft Visual Studio 2022 for Unreal Engine 4 C++ development.
+- Unreal Engine 5.4 (compatible with 5.5 and 5.6).
+- Microsoft Visual Studio 2022 for Unreal Engine 5 C++ development.
 - Microsoft Visual Studio Code for editing.
 
->__NOTE:__ If you need help with these setup steps, refer to the Unreal Engine 4 documentation, especially "Setting Up Visual Studio for Unreal Engine". The  was only tested with Visual Studio 2022 with Unreal Engine 4.27. The Unreal Engine sample __DOES NOT__ work with Ureal Engine 5.
+>__NOTE:__ If you need help with these setup steps, refer to the Unreal Engine 5 documentation, especially "Setting Up Visual Studio for Unreal Engine". The sample was tested with Visual Studio 2022 with Unreal Engine 5.4 and 5.6.
 
 ### AWS account requirements
 
@@ -227,7 +227,7 @@ An Unreal Engine sample project, [AmazonPollyMetaHuman](https://artifacts.kits.e
 6. Select the `Outputs` tab, and capture the values for `TextApiEndpointUrl`, and `RagApiEndpointUrl`.
 7. Download, the [AmazonPollyMetaHuman](https://artifacts.kits.eventoutfitters.aws.dev/industries/games/AmazonPollyMetaHuman.zip) zipped Unreal Engine project.
 8. Extract the `AmazonPollyMetaHuman` project folder to the `Unreal Projects` folder of the Unreal Engine development environment.
-9. Launch Unreal Engine 4.27, and open the `AmazonPollyMetaHuman` sample project.
+9. Launch Unreal Engine 5.4, and open the `AmazonPollyMetaHuman` sample project.
 10. Using the Unreal Editor, select `File` --> `Generate Visual Studio Code Project` to use VS Code for editing source code.
 11. Using the Unreal Editor, select `File` --> `Open Visual Studio Code` to open the project for code editing.
 12. In VS Code, open the `/Source/AmazonPollyMetaHuman/Private/Private/SpeechComponent.cpp` file for editing.
